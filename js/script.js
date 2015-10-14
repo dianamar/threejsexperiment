@@ -298,7 +298,7 @@ var average = 0.01;
 
         var l = line.geometry.vertices[cpt];
 
-        var dist = new THREE.Vector2(l.x, l.y).sub(center);
+        //var dist = new THREE.Vector2(l.x, l.y).sub(center);
 
         var size = 5.0;
 
@@ -308,7 +308,7 @@ var average = 0.01;
 
 
         // plus on divise par un grand nombre, plus la vitesse ralentie
-        var toLz = Math.sin(dist.length()/-size + (ts/500)) * magnitude;
+        var toLz = Math.sin(-size + (ts/500)) * magnitude;
         if( toLz != NaN ) {
           l.x += ( toLz - l.x ) * 10;
           console.log(l.x);
