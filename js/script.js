@@ -1,167 +1,166 @@
-// creation of the audio context
+
+///////////// AUDIO API : creation of the audio context /////////////
+
+
 var average = 0.01;
 
-    if (! window.AudioContext) {
-        if (! window.webkitAudioContext) {
-            alert('no audiocontext found');
-        }
-        window.AudioContext = window.webkitAudioContext;
+if (! window.AudioContext) {
+    if (! window.webkitAudioContext) {
+        alert('no audiocontext found');
     }
-    var context = new AudioContext();
-    var audioBuffer;
-    var sourceNode;
-    var splitter;
-    var analyser, analyser2;
-    var javascriptNode;
+    window.AudioContext = window.webkitAudioContext;
+}
+var context = new AudioContext(),
+    audioBuffer,
+    sourceNode,
+    splitter,
+    analyser, 
+    analyser2,
+    javascriptNode,
+    group;
 
-    var group;
-    
+// load the sound
+setupAudioNodes();
+//loadSound("./ressources/song.mp3");
 
 
-    // load the sound
-    setupAudioNodes();
+function setupAudioNodes() {
+
+    // setup a javascript node
+    javascriptNode = context.createScriptProcessor(2048, 1, 1);
+    // connect to destination, else it isn't called
+    javascriptNode.connect(context.destination);
+
+    // setup : analyzer
+    analyser = context.createAnalyser();
+    analyser.smoothingTimeConstant = 0.3;
+    analyser.fftSize = 1024;
+
+    analyser2 = context.createAnalyser();
+    analyser2.smoothingTimeConstant = 0.0;
+    analyser2.fftSize = 1024;
+
+    // creation of a buffer source node
+    sourceNode = context.createBufferSource();
+    splitter = context.createChannelSplitter();
+
+    // connect the source to the analyser and the splitter
+    sourceNode.connect(splitter);
+
+    // connect one of the outputs from the splitter to the analyser
+    splitter.connect(analyser,0,0);
+    splitter.connect(analyser2,1,0);
+
+    // connect the splitter to the javascriptnode
+    analyser.connect(javascriptNode);
+
+    // connect to destination
+    sourceNode.connect(context.destination);
+}
+
+// load the specified sound
+function loadSound(url) {
+    var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.responseType = 'arraybuffer';
+
+    // When loaded decode the data
+    request.onload = function() {
+
+        // decode the data
+        context.decodeAudioData(request.response, function(buffer) {
+            // when the audio is decoded play the sound
+            playSound(buffer);
+        }, onError);
+    }
+    request.send();
+}
+
+
+function playSound(buffer) {
+    sourceNode.buffer = buffer;
+    sourceNode.start(0);
+    sourceNode.onended = onEnded;
+}
+
+function onEnded() {
+  console.log('playback finished');
+  var soundavg = 0;
+}
+
+function onError(e) {
+    console.log(e);
+}
+
+javascriptNode.onaudioprocess = function() {
+
+    // get the average for the first channel
+    var array =  new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(array);
+    average = getAverageVolume(array);
+
+}
+
+function getAverageVolume(array) {
+    var values = 0;
+    var length = array.length;
+
+    // get all the frequency amplitudes
+    for (var i = 0; i < length; i++) {
+        values += array[i];
+    }
+
+    average = values / length;
+    return average;
+}
+
+
+
+
+
+///////////// THREE JS : AUDIO EQUALIZER //////////////////////////
+function audioEqualizer() {
+
     loadSound("./ressources/song.mp3");
 
+    var scene = new THREE.Scene(),
+        composer,
+        W = window.innerWidth,
+        H = window.innerHeight,
+        renderer = new THREE.WebGLRenderer();
 
-    function setupAudioNodes() {
-
-        // setup a javascript node
-        javascriptNode = context.createScriptProcessor(2048, 1, 1);
-        // connect to destination, else it isn't called
-        javascriptNode.connect(context.destination);
-
-
-        // setup : analyzer
-        analyser = context.createAnalyser();
-        analyser.smoothingTimeConstant = 0.3;
-        analyser.fftSize = 1024;
-
-        analyser2 = context.createAnalyser();
-        analyser2.smoothingTimeConstant = 0.0;
-        analyser2.fftSize = 1024;
-
-        // creation of a buffer source node
-        sourceNode = context.createBufferSource();
-        splitter = context.createChannelSplitter();
-
-        // connect the source to the analyser and the splitter
-        sourceNode.connect(splitter);
-
-        // connect one of the outputs from the splitter to
-        // the analyser
-        splitter.connect(analyser,0,0);
-        splitter.connect(analyser2,1,0);
-
-        // connect the splitter to the javascriptnode
-        analyser.connect(javascriptNode);
-
-        // connect to destination
-        sourceNode.connect(context.destination);
-    }
-
-    // load the specified sound
-    function loadSound(url) {
-        var request = new XMLHttpRequest();
-        request.open('GET', url, true);
-        request.responseType = 'arraybuffer';
-
-        // When loaded decode the data
-        request.onload = function() {
-
-            // decode the data
-            context.decodeAudioData(request.response, function(buffer) {
-                // when the audio is decoded play the sound
-                playSound(buffer);
-            }, onError);
-        }
-        request.send();
-    }
-
-
-    function playSound(buffer) {
-        sourceNode.buffer = buffer;
-        sourceNode.start(0);
-        sourceNode.onended = onEnded;
-        /*sourceNode.loop = true;*/
-    }
-
-    function onEnded() {
-      console.log('playback finished');
-      var soundavg = 0;
-  }
-
-    // log if an error occurs
-    function onError(e) {
-        console.log(e);
-    }
-
-    // quand le noeud javascript est appelé on utilise l'information de l'analyseur pour se servir des données de volume
-    javascriptNode.onaudioprocess = function() {
-
-        // get the average for the first channel
-        var array =  new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(array);
-        average = getAverageVolume(array);
-
-    }
-
-    function getAverageVolume(array) {
-        var values = 0;
-        //var average;
-
-        var length = array.length;
-
-        // get all the frequency amplitudes
-        for (var i = 0; i < length; i++) {
-            values += array[i];
-        }
-
-        average = values / length;
-        return average;
-        console.log(average);
-    }
-
-
-
-
-
-    // THREE JS
-
-    var scene = new THREE.Scene();
-    var composer;
-
-    var W = window.innerWidth;
-    var H = window.innerHeight;
-
-    var renderer = new THREE.WebGLRenderer();
-    //renderer.setClearColor(0x17293a);
     renderer.setClearColor(0x000000);
     renderer.setSize(W, H);
 
-    console.log(renderer);
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
+    // Camera settings
     var camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 10000);
 
-    var planeGeometry = new THREE.PlaneGeometry(80, 80, 20, 20);
-    var planeMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent:true, opacity: 0.3});
-    //planeMaterial.materials[0].opacity = 0.5;
-
-
-    var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    // Controling camera rotation with the mouse
     controls = new THREE.OrbitControls( camera, renderer.domElement );
 
+    // Camera settings
+    camera.position.set(0, 90, 100);
+    camera.lookAt(scene.position);
 
 
-    // POSITION INITIALE DU PLAN //
 
-    // Fontaine
+
+    ///// PLANE CREATION /////
+    var planeGeometry = new THREE.PlaneGeometry(80, 80, 20, 20),
+        planeMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent:true, opacity: 0.3}),
+        plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+    // Plane initial rotation and position settings
     plane.rotation.x = -0.5 * Math.PI;
+    plane.position.set(0, 0, 0);
+    scene.add(plane);
 
+    // Second plane x position
     setTimeout(planeCircle, 8000);
-
 
     function planeDna(){
       plane.rotation.y = -0.5 * Math.PI;
@@ -176,55 +175,37 @@ var average = 0.01;
     function planeWater() {
       plane.rotation.x = -0.5 * Math.PI;
       plane.rotation.y = 0;
-      console.log("change");
       planeCircle();
     }
 
 
 
 
-
-    //CREATION D'UNE LIGNE
-
+    ///// Line creation /////
     var material = new THREE.LineBasicMaterial({
-      color: 0x0000ff
+      color: 0xffffff,
+      transparent: true,
+      opacity: .6
     });
 
+    // Creating several vertices dynamically for the line movement
+    var countVertices = 100,
+        step = 10,
+        min = -( countVertices / 2 ) * step,
+        vertices = [];
+
+    for( var i = 0; i < countVertices; i++ ) {
+        vertices.push( new THREE.Vector3( min + i * step, 0, 0 ) )
+    }
+
     var geometry = new THREE.Geometry();
-    geometry.vertices.push(
-      new THREE.Vector3( -100, 0, 0 ),
-      new THREE.Vector3( 0, 0, 0 ),
-      new THREE.Vector3( 200, 0, 0 )
-    );
+    geometry.vertices = vertices
 
     var line = new THREE.Line( geometry, material );
-
-    //line.rotation.y =   Math.PI/2;
-    // line.position.y = -200;
-   // line.rotation.x = -0.5 * Math.PI;
     scene.add( line );
 
 
-
-
-
-
-    
-
-
-    // Cercle
-     //plane.rotation.x = -0.5 * Math.PI/2;
-
-
-    plane.position.set(0, 0, 0);
-
-    scene.add(plane);
-
-    camera.position.set(0, 90, 100);
-    camera.lookAt(scene.position);
-
-    // postprocessing dots
-
+    // Postprocessing dots effect
     composer = new THREE.EffectComposer( renderer );
     composer.addPass( new THREE.RenderPass( scene, camera ) );
 
@@ -237,131 +218,91 @@ var average = 0.01;
     effect.renderToScreen = true;
     composer.addPass( effect );
 
-    // 
-
 
     document.body.appendChild(renderer.domElement);
 
     (function drawFrame(ts){
 
+        if( !ts ) {
+            window.requestAnimationFrame(drawFrame);
+            return
+        }
+
+        // Plane center vector
+        var center = new THREE.Vector2(0,0);
+
+        // Calling animation update
+        window.requestAnimationFrame(drawFrame);
 
       
-      // shape.position.y += .01;
-      // shape.position.Z += .01;
+        ///// PLANE ANIMATION  /////
 
-      // shape.position.y += average/10000;
-      // shape.position.Z += average/10000;
-      // shape.position.x -= average/10000;
+        // Number of plane vertices
+        var vLength = plane.geometry.vertices.length,
+            v,
+            dist,
+            size,
+            magnitude,
+            toVz;
 
-      // shape.rotation.x += average/5000;
-      // shape.rotation.y += average/5000;
+        // Loop fot plane motion 
+        for (var i = 0; i < vLength; i++) {
 
+            v = plane.geometry.vertices[i];
+            dist = new THREE.Vector2(v.x, v.y).sub(center);
+            size = 5.0;
 
+            // The more the magnitude is high, the more the amplitude is important
+            magnitude = average/3;
 
-      if( !ts ) {
-        window.requestAnimationFrame(drawFrame);
-        return
-      }
+            toVz = Math.sin(dist.length()/-size + (ts/500)) * magnitude;
 
-      var center = new THREE.Vector2(0,0);
-      window.requestAnimationFrame(drawFrame);
-      var vLength = plane.geometry.vertices.length;
+            // Ease effect with prev and current plane position 
+            if( toVz != NaN ) {
+              v.z += ( toVz - v.z ) * .1;
+            }
 
-      // 
-      for (var i = 0; i < vLength; i++) {
-        var v = plane.geometry.vertices[i];
-        var dist = new THREE.Vector2(v.x, v.y).sub(center);
-        //effet trampoline : var size = 50.0;
-        var size = 5.0;
-
-        //+ on augmente magnitude, plus l'amplitude est grande, haute
-        //var magnitude = 40;
-        var magnitude = average/3;
-
-
-        // plus on divise par un grand nombre, plus la vitesse ralentie
-        var toVz = Math.sin(dist.length()/-size + (ts/500)) * magnitude;
-        console.log(toVz);
-        if( toVz != NaN ) {
-          v.z += ( toVz - v.z ) * .1;
         }
-      }
+        plane.geometry.verticesNeedUpdate = true;
 
 
 
+        ///// LINE ANIMATION  /////
 
+        // Number of line vertices
+        var lineLength = line.geometry.vertices.length,
+          l,
+          dist,
+          magnitudeLine,
+          toLz;
 
+        // Loop for line motion
+        for (var cpt = 0; cpt < lineLength; cpt++) {
 
-      var lineLength = line.geometry.vertices.length;
+            l = line.geometry.vertices[cpt];
+            dist = new THREE.Vector2(l.x, l.y).sub(center);
+            magnitudeLine = average/3;
+            toLz = Math.sin(dist.length()/-size + (ts/800)) * magnitudeLine;
 
-      for (var cpt = 0; cpt < lineLength; cpt++) {
+            // Ease effect with prev and current line position 
+            if( toLz != NaN ) {
+              l.y += ( toLz - l.y ) * .1;
+            }
 
-        var l = line.geometry.vertices[cpt];
-
-        //var dist = new THREE.Vector2(l.x, l.y).sub(center);
-
-        var size = 5.0;
-
-        //+ on augmente magnitude, plus l'amplitude est grande, haute
-        //var magnitude = 40;
-        var magnitude = average/3;
-
-
-        // plus on divise par un grand nombre, plus la vitesse ralentie
-        var toLz = Math.sin(-size + (ts/500)) * magnitude;
-        if( toLz != NaN ) {
-          l.x += ( toLz - l.x ) * 10;
-          console.log(l.x);
         }
-      }
+        line.geometry.verticesNeedUpdate = true;
 
 
-      plane.geometry.verticesNeedUpdate = true;
-      renderer.render(scene, camera);
-      composer.render();
+        renderer.render(scene, camera);
+        composer.render();
 
     }());
 
+}
 
 
 
 
 
-
-
-    // (function(){
-
-    //   var geometry = new THREE.SphereGeometry(4,2,2);
-    //   var material = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true});
-
-    //   group = new THREE.Object3D();
-
-    //     for ( var i = 0; i < 10; i ++ ) {
-
-    //         var mesh = new THREE.Mesh( geometry, material );
-    //         // mesh.position.x = Math.random() * 2000 - 1000;
-    //         // mesh.position.y = Math.random() * 2000 - 1000;
-    //         // mesh.position.z = Math.random() * 2000 - 1000;
-    //         // mesh.rotation.x = Math.random() * 2 * Math.PI;
-    //         // mesh.rotation.y = Math.random() * 2 * Math.PI;
-
-    //         mesh.position.x = window.innerWidth/6;
-    //         mesh.position.y = Math.random() * 2000 - 1000;
-    //         mesh.position.z = Math.random() * 2000 - 1000;
-    //         mesh.rotation.x = Math.random() * 2 * Math.PI;
-    //         mesh.rotation.y = Math.random() * 2 * Math.PI;
-
-    //         mesh.opacity = 50;
-    //         mesh.matrixAutoUpdate = false;
-    //         mesh.updateMatrix();
-    //         group.add( mesh );
-
-
-    //     }
-    //     scene.add( group );
-
-
-
-    //   //render();
-    // })();
+audioEqualizer();
 

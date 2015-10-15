@@ -4,16 +4,62 @@ body {
 	-o-filter: blur(.5px);
 	-ms-filter: blur(.5px);
 	filter: blur(.5px);
+	width: 100%;
+	height: 100%;
+	font-family: 'Lato', sans-serif;
+	font-weight: normal;
 }
 
 .Quote {
 	height: 100%;
-	width: 100%;
+    width: 100%;
+    /*background-color: black;*/
+    background: rgba(0, 0, 0, .5);
+    position: absolute;
+    display: table;
+    -webkit-filter: blur(.5px);
+	-moz-filter: blur(.5px);
+	-o-filter: blur(.5px);
+	-ms-filter: blur(.5px);
+	filter: blur(.5px);
 }
-	.Quote-title {
-		color: #ffffff;
-		font-family: 'Lato', sans-serif;
-		position: absolute;
-		font-size: 5em;
-		font-weight: normal;
+
+	.Quote-container {
+		display: table-cell;
+		text-align: center;
+		vertical-align: middle;
 	}
+
+	.Quote-text {
+		color: #ffffff;
+	}
+	.Quote-text--title {
+		font-size: 5em;
+		text-transform: uppercase;
+	}
+	.Quote-text--subtitle {
+		font-size: 2em;
+		line-height: 0;
+	}
+	.Quote-text--author {
+		font-size: 1.5em;
+	}
+
+	.Quote-btn {
+		border: solid 1px #fff;
+		color: #fff;
+		display: block;
+		padding: 10px;
+		width: 10%;
+		margin: 0 auto;
+		text-decoration: none;
+		-webkit-transition: all 1s ease-in-out;
+		-moz-transition: all 1s ease-in-out;
+		-o-transition: all 1s ease-in-out;
+		transition: all 1s ease-in-out;
+	}
+	.Quote-btn:hover {
+		/*background-color: #fff;
+		color: black;*/
+	}
+
