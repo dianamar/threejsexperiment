@@ -1,8 +1,11 @@
 
 ///////////// AUDIO API : creation of the audio context /////////////
 
-
-var average = 0.01;
+$(".js-MusicText").hide();
+var average = 0.01,
+    plane,
+    line,
+    ready;
 
 if (! window.AudioContext) {
     if (! window.webkitAudioContext) {
@@ -21,8 +24,6 @@ var context = new AudioContext(),
 
 // load the sound
 setupAudioNodes();
-//loadSound("./ressources/song.mp3");
-
 
 function setupAudioNodes() {
 
@@ -70,6 +71,12 @@ function loadSound(url) {
         // decode the data
         context.decodeAudioData(request.response, function(buffer) {
             // when the audio is decoded play the sound
+            //console.log( "toto" );
+            ready = true;
+            setTimeout( function() {
+                TweenMax.to(plane.material, 2, { opacity: .3});
+                TweenMax.to(line.material, 2, { opacity: .6});
+            }, 250)
             playSound(buffer);
         }, onError);
     }
@@ -80,11 +87,12 @@ function loadSound(url) {
 function playSound(buffer) {
     sourceNode.buffer = buffer;
     sourceNode.start(0);
+    //sourceNode.onstarted = function() {};
     sourceNode.onended = onEnded;
 }
 
 function onEnded() {
-  console.log('playback finished');
+  elementsFadeOut();
   var soundavg = 0;
 }
 
@@ -121,7 +129,7 @@ function getAverageVolume(array) {
 ///////////// THREE JS : AUDIO EQUALIZER //////////////////////////
 function audioEqualizer() {
 
-    loadSound("./ressources/song.mp3");
+    loadSound("./ressources/saveme.mp3");
 
     var scene = new THREE.Scene(),
         composer,
@@ -151,41 +159,37 @@ function audioEqualizer() {
 
     ///// PLANE CREATION /////
     var planeGeometry = new THREE.PlaneGeometry(80, 80, 20, 20),
-        planeMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent:true, opacity: 0.3}),
-        plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        planeMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent:true, opacity: 0});
+
+    plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
     // Plane initial rotation and position settings
-    plane.rotation.x = -0.5 * Math.PI;
+    planeWater();
+    //plane.rotation.x = -0.5 * Math.PI;
     plane.position.set(0, 0, 0);
     scene.add(plane);
 
-    // Second plane x position
-    setTimeout(planeCircle, 8000);
 
     function planeDna(){
-      plane.rotation.y = -0.5 * Math.PI;
+      TweenMax.to( plane.rotation,10,{y:  plane.rotation.y -90 * Math.PI/180})
       setTimeout(planeWater, 8000);
     }
 
     function planeCircle() {
-      plane.rotation.x = -0.5 * Math.PI/2;
+      TweenMax.to( plane.rotation,10,{x:  plane.rotation.x +90 * Math.PI/90})
       setTimeout(planeDna, 8000);
     }
 
     function planeWater() {
-      plane.rotation.x = -0.5 * Math.PI;
-      plane.rotation.y = 0;
+      TweenMax.to( plane.rotation,10,{x:  plane.rotation.x -180 * Math.PI/180})
       planeCircle();
     }
-
-
-
 
     ///// Line creation /////
     var material = new THREE.LineBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: .6
+      opacity: 0
     });
 
     // Creating several vertices dynamically for the line movement
@@ -201,7 +205,7 @@ function audioEqualizer() {
     var geometry = new THREE.Geometry();
     geometry.vertices = vertices
 
-    var line = new THREE.Line( geometry, material );
+    line = new THREE.Line( geometry, material );
     scene.add( line );
 
 
@@ -233,7 +237,6 @@ function audioEqualizer() {
 
         // Calling animation update
         window.requestAnimationFrame(drawFrame);
-
       
         ///// PLANE ANIMATION  /////
 
@@ -292,17 +295,29 @@ function audioEqualizer() {
         }
         line.geometry.verticesNeedUpdate = true;
 
-
         renderer.render(scene, camera);
         composer.render();
+
+        if(average > 78) {
+            $(".js-MusicText").fadeIn();
+        } else {
+            $(".js-MusicText").fadeOut();
+        }
 
     }());
 
 }
 
-
-
-
-
 audioEqualizer();
+
+function elementsFadeOut() {
+    TweenMax.to(line.material, 2, { opacity: 0});
+    TweenMax.to(plane.material, 2, { opacity: 0, onComplete:displayReplay});
+}
+
+function displayReplay() {
+    $(".js-Replay").css("display", "block"); 
+    TweenMax.to($(".js-Replay-logo"), 1, { opacity: 1});
+    TweenMax.to($(".js-Button"), 1, { opacity: 1});
+}
 

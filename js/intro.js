@@ -1,10 +1,14 @@
+var plane,
+    mousemove;
+
 function planeCreation() {
 
     var scene = new THREE.Scene(),
         composer,
         W = window.innerWidth,
         H = window.innerHeight,
-        renderer = new THREE.WebGLRenderer();
+        renderer = new THREE.WebGLRenderer(),
+        mouseX;
 
     renderer.setClearColor(0x000000);
     renderer.setSize(W, H);
@@ -26,8 +30,9 @@ function planeCreation() {
 
     ///// PLANE CREATION /////
     var planeGeometry = new THREE.PlaneGeometry(80, 80, 20, 20),
-        planeMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent:true, opacity: 0.3}),
-        plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        planeMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, wireframe: true, transparent:true, opacity: 0.3});
+
+    plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
     // Plane initial rotation and position settings
     plane.rotation.y = -0.5 * Math.PI;
@@ -93,14 +98,10 @@ function planeCreation() {
         }
         plane.geometry.verticesNeedUpdate = true;
 
-
         renderer.render(scene, camera);
         composer.render();
 
     }());
-
-    
-    
 
     renderer.render(scene, camera);
         composer.render();
@@ -108,4 +109,23 @@ function planeCreation() {
 
 $( document ).ready(function() {
     planeCreation();
+});
+
+
+displayText();
+
+function displayText() {
+    $(".js-Replay").css("display", "block"); 
+
+    TweenMax.staggerTo(".Text", .5, {opacity:1, ease:Quad.easeIn}, 0.8);
+
+}
+
+//Mousemovement 
+$( document ).on( "mousemove", function( event ) {
+
+    mouseX = event.pageX;
+    
+    mouseMove = mouseX/250;
+    plane.position.x += ( mouseMove - plane.position.x ) * .1;
 });
